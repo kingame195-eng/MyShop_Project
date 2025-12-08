@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { FiEdit2, FiLock, FiLogOut } from "react-icons/fi";
+import { AuthContext } from "../context/AuthContext";
 import "./Account.css";
 
 function Account() {
+  // ✅ CORRECT: Get user from AuthContext
+  const { user } = useContext(AuthContext);
+
+  // ✅ CORRECT: Initialize with real user data from localStorage
   const [userInfo, setUserInfo] = useState({
-    name: "Nguyen Van A",
-    email: "nguyenvana@email.com",
-    phone: "0912345678",
-    address: "123 Le Loi Street, Ho Chi Minh City",
+    name: user?.name || "User",
+    email: user?.email || "email@example.com",
+    phone: user?.phone || "Not provided",
+    address: user?.address || "Not provided",
     avatar: "https://via.placeholder.com/150",
   });
   const [isEditMode, setIsEditMode] = useState(false);
@@ -35,10 +40,29 @@ function Account() {
     });
   };
 
-  const handleSaveProfile = () => {
-    setUserInfo(formData);
-    setIsEditMode(false);
-    alert("Profile updated successfully!");
+  const handleSaveProfile = async () => {
+    // ✅ CORRECT: Call backend API to update profile
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/profile/${user?.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to update profile");
+      const data = await response.json();
+      setUserInfo(formData);
+      setIsEditMode(false);
+      alert("Profile updated successfully!");
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -48,6 +72,25 @@ function Account() {
 
   const handleChangePassword = (e) => {
     e.preventDefault();
+
+    // ❌ TODO: Call backend API to change password
+    // try {
+    //   const response = await fetch("http://localhost:5000/api/users/change-password", {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       Authorization: `Bearer ${user?.token}`,
+    //     },
+    //     body: JSON.stringify({
+    //       currentPassword: passwordData.currentPassword,
+    //       newPassword: passwordData.newPassword,
+    //     }),
+    //   });
+    //   if (!response.ok) throw new Error("Failed to change password");
+    //   alert("Password changed successfully!");
+    // } catch (error) {
+    //   alert("Error: " + error.message);
+    // }
 
     // Validation
     if (
@@ -99,17 +142,13 @@ function Account() {
             </div>
             <nav className="account-nav">
               <button
-                className={`nav-link ${
-                  activeTab === "profile" ? "active" : ""
-                }`}
+                className={`nav-link ${activeTab === "profile" ? "active" : ""}`}
                 onClick={() => setActiveTab("profile")}
               >
                 <FiEdit2 /> Profile
               </button>
               <button
-                className={`nav-link ${
-                  activeTab === "security" ? "active" : ""
-                }`}
+                className={`nav-link ${activeTab === "security" ? "active" : ""}`}
                 onClick={() => setActiveTab("security")}
               >
                 <FiLock /> Password
@@ -143,10 +182,7 @@ function Account() {
                       <span>{userInfo.address}</span>
                     </div>
 
-                    <button
-                      onClick={() => setIsEditMode(true)}
-                      className="btn-edit-profile"
-                    >
+                    <button onClick={() => setIsEditMode(true)} className="btn-edit-profile">
                       <FiEdit2 /> Edit
                     </button>
                   </div>
@@ -197,18 +233,10 @@ function Account() {
                     </div>
 
                     <div className="form-actions">
-                      <button
-                        type="button"
-                        onClick={handleSaveProfile}
-                        className="btn-save"
-                      >
+                      <button type="button" onClick={handleSaveProfile} className="btn-save">
                         Save
                       </button>
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        className="btn-cancel"
-                      >
+                      <button type="button" onClick={handleCancelEdit} className="btn-cancel">
                         Cancel
                       </button>
                     </div>

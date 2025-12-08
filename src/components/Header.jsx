@@ -38,7 +38,7 @@ function Header() {
 
           {user ? (
             <div className="user-menu">
-              <span className="user-name">Hi, {user.fullName}</span>
+              <span className="user-name">Hi, {user.name || user.email}</span>
               <Link to="/account" className="nav-link">
                 <FiUser /> Account
               </Link>

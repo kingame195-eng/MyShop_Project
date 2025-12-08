@@ -1,37 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiStar, FiThumbsUp } from "react-icons/fi";
 import "./ProductRatings.css";
 
 function ProductRatings() {
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      rating: 5,
-      date: "2024-11-15",
-      title: "Excellent product!",
-      comment: "Great quality, fast shipping. Very satisfied!",
-      helpful: 25,
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      rating: 4,
-      date: "2024-11-10",
-      title: "Pretty good",
-      comment: "Product matches description. Reasonable price.",
-      helpful: 12,
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      rating: 5,
-      date: "2024-11-05",
-      title: "Worth the money!",
-      comment: "Bought 2, both are great. Will buy again.",
-      helpful: 18,
-    },
-  ]);
+  // ❌ OLD: Hardcoded reviews - Should fetch from API
+  // const [reviews, setReviews] = useState([
+  //   {
+  //     id: 1,
+  //     name: "John Doe",
+  //     rating: 5,
+  //     date: "2024-11-15",
+  //     title: "Excellent product!",
+  //     comment: "Great quality, fast shipping. Very satisfied!",
+  //     helpful: 25,
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Jane Smith",
+  //     rating: 4,
+  //     date: "2024-11-10",
+  //     title: "Pretty good",
+  //     comment: "Product matches description. Reasonable price.",
+  //     helpful: 12,
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Mike Johnson",
+  //     rating: 5,
+  //     date: "2024-11-05",
+  //     title: "Worth the money!",
+  //     comment: "Bought 2, both are great. Will buy again.",
+  //     helpful: 18,
+  //   },
+  // ]);
+
+  // ✅ CORRECT: Fetch reviews from API (empty for now)
+  const [reviews, setReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  // TODO: Fetch reviews from /api/products/:id/reviews
+  // useEffect(() => {
+  //   const fetchReviews = async () => {
+  //     try {
+  //       setIsLoadingReviews(true);
+  //       const productId = new URLSearchParams(window.location.search).get("id");
+  //       const response = await fetch(`http://localhost:5000/api/products/${productId}/reviews`);
+  //       if (!response.ok) throw new Error("Failed to fetch reviews");
+  //       const data = await response.json();
+  //       setReviews(data);
+  //     } catch (error) {
+  //       console.error("Error fetching reviews:", error);
+  //     } finally {
+  //       setIsLoadingReviews(false);
+  //     }
+  //   };
+  //   fetchReviews();
+  // }, []);
 
   const [newReview, setNewReview] = useState({
     name: "",
@@ -44,9 +68,7 @@ function ProductRatings() {
 
   const averageRating =
     reviews.length > 0
-      ? (
-          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-        ).toFixed(1)
+      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
       : 0;
 
   const ratingCounts = {
@@ -89,11 +111,7 @@ function ProductRatings() {
 
   const renderStars = (rating) => {
     return Array.from({ length: 5 }).map((_, i) => (
-      <FiStar
-        key={i}
-        className={`star ${i < rating ? "filled" : ""}`}
-        size={16}
-      />
+      <FiStar key={i} className={`star ${i < rating ? "filled" : ""}`} size={16} />
     ));
   };
 
@@ -103,9 +121,7 @@ function ProductRatings() {
       <div className="rating-summary">
         <div className="average-rating">
           <div className="rating-number">{averageRating}</div>
-          <div className="rating-stars">
-            {renderStars(Math.round(averageRating))}
-          </div>
+          <div className="rating-stars">{renderStars(Math.round(averageRating))}</div>
           <div className="rating-count">({reviews.length} ratings)</div>
         </div>
         <div className="rating-breakdown">
@@ -127,10 +143,7 @@ function ProductRatings() {
         </div>
       </div>
 
-      <button
-        onClick={() => setShowReviewForm(!showReviewForm)}
-        className="btn-write-review"
-      >
+      <button onClick={() => setShowReviewForm(!showReviewForm)} className="btn-write-review">
         {showReviewForm ? "Cancel" : "Write Review"}
       </button>
       {showReviewForm && (
@@ -151,12 +164,7 @@ function ProductRatings() {
           </div>
           <div className="form-group">
             <label htmlFor="rating">Rating *</label>
-            <select
-              id="rating"
-              name="rating"
-              value={newReview.rating}
-              onChange={handleFormChange}
-            >
+            <select id="rating" name="rating" value={newReview.rating} onChange={handleFormChange}>
               <option value={5}>5 stars - Excellent!</option>
               <option value={4}>4 stars - Very good</option>
               <option value={3}>3 stars - Average</option>

@@ -10,7 +10,7 @@ function Checkout() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    fullName: user?.fullName || "",
+    fullName: user?.name || "",
     email: user?.email || "",
     phone: "",
     address: "",
@@ -45,20 +45,52 @@ function Checkout() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.fullName || !formData.email || !formData.phone) {
       alert("Please fill in all required fields");
       return;
     }
+
+    // ✅ CORRECT: Submit order to backend API
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({
+          items: cart.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+          shippingAddress: `${formData.address}, ${formData.city}`,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to place order");
+
+      const data = await response.json();
+      console.log("Order created:", data);
+
       setOrderPlaced(true);
-      setIsLoading(false);
       clearCart();
-    }, 2000);
+    } catch (error) {
+      alert("Error placing order: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // ❌ OLD: Used fake setTimeout instead of calling backend
+  // setTimeout(() => {
+  //   setOrderPlaced(true);
+  //   setIsLoading(false);
+  //   clearCart();
+  // }, 2000);
 
   const totalPrice = getTotalPrice();
   const shippingCost = totalPrice > 100 ? 0 : 5;
@@ -73,8 +105,7 @@ function Checkout() {
             <h1>Order Placed Successfully!</h1>
             <p>Thank you for your purchase. Your order is being processed.</p>
             <p>
-              We will send detailed information to your email:{" "}
-              <strong>{formData.email}</strong>
+              We will send detailed information to your email: <strong>{formData.email}</strong>
             </p>
             <div className="order-details">
               <h3>Order Information:</h3>
@@ -82,12 +113,10 @@ function Checkout() {
                 <strong>Recipient Name:</strong> {formData.fullName}
               </p>
               <p>
-                <strong>Delivery Address:</strong> {formData.address},{" "}
-                {formData.city}
+                <strong>Delivery Address:</strong> {formData.address}, {formData.city}
               </p>
               <p>
-                <strong>Total Amount:</strong> $
-                {totalPayment.toLocaleString("en-US")}
+                <strong>Total Amount:</strong> ${totalPayment.toLocaleString("en-US")}
               </p>
             </div>
             <button onClick={() => navigate("/")} className="btn-back-home">
@@ -218,11 +247,7 @@ function Checkout() {
                   </label>
                 </div>
               </section>
-              <button
-                type="submit"
-                className="btn-place-order"
-                disabled={isLoading}
-              >
+              <button type="submit" className="btn-place-order" disabled={isLoading}>
                 {isLoading ? "Processing..." : "Place Order"}
               </button>
             </form>

@@ -1,6 +1,33 @@
 import { createContext, useState, useEffect } from "react";
 import useLocalStorage from "../hooks/useLocalStorage";
 
+// Import API function
+const API_BASE_URL = "http://localhost:5000/api";
+
+// Helper function to fetch API
+const fetchAPI = async (endpoint, options = {}) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  if (user && user.token) {
+    headers.Authorization = `Bearer ${user.token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -18,7 +45,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (successMessage) {
-      const timer = setTimeout(() => successMessage(null), 5000);
+      const timer = setTimeout(() => setSuccessMessage(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
@@ -37,22 +64,30 @@ export function AuthProvider({ children }) {
         throw new Error("Password must be at least 6 characters");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // ✅ CORRECT: Call Backend API to save user to PostgreSQL
+      const response = await fetchAPI("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: fullName,
+          email,
+          password,
+          confirmPassword: password,
+        }),
+      });
 
-      const newUser = {
-        id: Date.now(),
-        email,
-        fullName,
-        role: "user",
-        isEmailVerified: false,
-        createdAt: new Date().toISOString(),
-      };
+      // ✅ CORRECT: Save user + token to localStorage
+      setUser({
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        token: response.token,
+      });
 
-      setUser(newUser);
-      setSuccessMessage("Registration successful! Please verify your email.");
-      return { success: true, user: newUser };
+      setSuccessMessage("Registration successful!");
+      return { success: true, user: response.user };
     } catch (error) {
       setError(error.message);
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -68,24 +103,26 @@ export function AuthProvider({ children }) {
         throw new Error("Please fill in all required information");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (email === "demo@example.com" && password === "123456") {
-        const loggedUser = {
-          id: 1,
+      // ✅ CORRECT: Call Backend API to authenticate user
+      const response = await fetchAPI("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
           email,
-          fullName: "Demo User",
-          role: "user",
-          isEmailVerified: true,
-          token: "demo-jwt-token-" + Date.now(),
-        };
+          password,
+        }),
+      });
 
-        setUser(loggedUser);
-        setSuccessMessage("Login successful!");
-        return { success: true, user: loggedUser };
-      } else {
-        throw new Error("Email or password is incorrect");
-      }
+      // ✅ CORRECT: Save user + token to localStorage
+      setUser({
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: response.user.role,
+        token: response.token,
+      });
+
+      setSuccessMessage("Login successful!");
+      return { success: true, user: response.user };
     } catch (error) {
       setError(error.message);
       return { success: false, error: error.message };
@@ -107,70 +144,77 @@ export function AuthProvider({ children }) {
     });
   };
 
-  const requestReset = async (email) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccessMessage(null);
+  // ❌ NOT IMPLEMENTED YET - Password reset không có backend support
+  // const requestReset = async (email) => {
+  //   setIsLoading(true);
+  //   setError(null);
+  //   setSuccessMessage(null);
+  //
+  //   try {
+  //     if (!email) {
+  //       throw new Error("Please enter email");
+  //     }
+  //     // TODO: Gọi backend /api/auth/forgot-password
+  //     // const response = await fetchAPI("/auth/forgot-password", {
+  //     //   method: "POST",
+  //     //   body: JSON.stringify({ email }),
+  //     // });
+  //     setSuccessMessage("Password reset email has been sent. Please check your inbox.");
+  //     return { success: true };
+  //   } catch (error) {
+  //     setError(error.message);
+  //     return { success: false, error: error.message };
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-    try {
-      if (!email) {
-        throw new Error("Please enter email");
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  // ❌ NOT IMPLEMENTED YET - Reset password không có backend support
+  // const resetUserPassword = async (data) => {
+  //   setIsLoading(true);
+  //   setError(null);
+  //   setSuccessMessage(null);
+  //
+  //   try {
+  //     if (!data.token || !data.newPassword) {
+  //       throw new Error("Invalid data");
+  //     }
+  //     // TODO: Gọi backend /api/auth/reset-password
+  //     // const response = await fetchAPI("/auth/reset-password", {
+  //     //   method: "POST",
+  //     //   body: JSON.stringify(data),
+  //     // });
+  //     setSuccessMessage("Password has been changed successfully!");
+  //     return { success: true };
+  //   } catch (error) {
+  //     setError(error.message);
+  //     return { success: false, error: error.message };
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-      setSuccessMessage(
-        "Password reset email has been sent. Please check your inbox."
-      );
-      return { success: true };
-    } catch (error) {
-      setError(error.message);
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resetUserPassword = async (data) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      if (!data.token || !data.newPassword) {
-        throw new Error("Invalid data");
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setSuccessMessage("Password has been changed successfully!");
-      return { success: true };
-    } catch (error) {
-      setError(error.message);
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const verifyEmail = async (token) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Update user email verified status
-      setUser({ ...user, isEmailVerified: true });
-      setSuccessMessage("Email verified successfully!");
-
-      return { success: true };
-    } catch (error) {
-      setError(error.message);
-      return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // ❌ NOT IMPLEMENTED YET - Email verification không có backend support
+  // const verifyEmail = async (token) => {
+  //   setIsLoading(true);
+  //   setError(null);
+  //
+  //   try {
+  //     // TODO: Gọi backend /api/auth/verify-email
+  //     // const response = await fetchAPI("/auth/verify-email", {
+  //     //   method: "POST",
+  //     //   body: JSON.stringify({ token }),
+  //     // });
+  //     setUser({ ...user, isEmailVerified: true });
+  //     setSuccessMessage("Email verified successfully!");
+  //     return { success: true };
+  //   } catch (error) {
+  //     setError(error.message);
+  //     return { success: false, error: error.message };
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   const value = {
     user,
     isLoading,
@@ -180,9 +224,10 @@ export function AuthProvider({ children }) {
     login,
     logout,
     updateUser,
-    requestReset,
-    resetUserPassword,
-    verifyEmail,
+    // ❌ NOT IMPLEMENTED - requestReset, resetUserPassword, verifyEmail
+    // requestReset,
+    // resetUserPassword,
+    // verifyEmail,
     isAuthenticated: !!user,
     userRole: user?.role || null,
     isAdmin: user?.role === "admin",

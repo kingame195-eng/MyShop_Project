@@ -1,25 +1,49 @@
-import { useState, useContext, useMemo } from "react";
+import { useState, useContext, useMemo, useEffect } from "react";
 import ProductCard from "../components/ProductCard";
-import { products } from "../data/products";
 import { CartContext } from "../context/CartContext";
 import SearchFilter from "../components/SearchFilter";
 import "./Home.css";
 
 function Home() {
-  // const [displayedProducts] = useState(products);
+  // ✅ CORRECT: Fetch products from backend API
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortBy, setSortBy] = useState("none");
 
+  // ✅ CORRECT: Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("http://localhost:5000/api/products");
+        if (!response.ok) throw new Error("Failed to fetch products");
+        const data = await response.json();
+        setDisplayedProducts(data);
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching products:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // ❌ OLD: Used hardcoded products from data/products.js
+  // const [displayedProducts] = useState(products);
+
   const filteredProducts = useMemo(() => {
-    let result = products.filter((product) =>
+    let result = displayedProducts.filter((product) =>
       product.name.toLowerCase().includes(searchKeyword.toLowerCase())
     );
 
     if (selectedCategory) {
-      result = result.filter(
-        (product) => product.category === selectedCategory
-      );
+      result = result.filter((product) => product.category === selectedCategory);
     }
 
     switch (sortBy) {
@@ -39,7 +63,7 @@ function Home() {
         break;
     }
     return result;
-  }, [searchKeyword, selectedCategory, sortBy]);
+  }, [displayedProducts, searchKeyword, selectedCategory, sortBy]);
 
   return (
     <main className="home">
@@ -60,12 +84,13 @@ function Home() {
           <div className="section-header">
             <h2>
               Featured Products
-              <span className="result-count">
-                ({filteredProducts.length} products)
-              </span>
+              <span className="result-count">({filteredProducts.length} products)</span>
             </h2>
             <p>Explore the best technology products available</p>
           </div>
+
+          {isLoading && <p style={{ textAlign: "center" }}>Loading products...</p>}
+          {error && <p style={{ textAlign: "center", color: "red" }}>Error: {error}</p>}
 
           <div className="products-grid">
             {filteredProducts.map((product) => (

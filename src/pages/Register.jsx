@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import {
-  validateRegisterForm,
-  validatePassword,
-  sanitizeInput,
-} from "../utils/validators";
+import { validateRegisterForm, validatePassword, sanitizeInput } from "../utils/validators";
 import "./Auth.css";
 
 function Register() {
@@ -34,9 +30,7 @@ function Register() {
   const navigate = useNavigate();
 
   // Calculate password strength directly from formData
-  const passwordStrength = formData.password
-    ? validatePassword(formData.password).strength
-    : "";
+  const passwordStrength = formData.password ? validatePassword(formData.password).strength : "";
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -99,7 +93,8 @@ function Register() {
         password: "",
         confirmPassword: "",
       });
-      setTimeout(() => navigate("/verify-email"), 1500);
+      // setTimeout(() => navigate("/verify-email"), 1500);
+      setTimeout(() => navigate("/"), 1500);
     }
   };
 
@@ -123,9 +118,7 @@ function Register() {
                 className={fieldErrors.fullName ? "input-error" : ""}
                 required
               />
-              {fieldErrors.fullName && (
-                <span className="field-error">{fieldErrors.fullName}</span>
-              )}
+              {fieldErrors.fullName && <span className="field-error">{fieldErrors.fullName}</span>}
             </div>
 
             <div className="form-group">
@@ -141,9 +134,7 @@ function Register() {
                 className={fieldErrors.email ? "input-error" : ""}
                 required
               />
-              {fieldErrors.email && (
-                <span className="field-error">{fieldErrors.email}</span>
-              )}
+              {fieldErrors.email && <span className="field-error">{fieldErrors.email}</span>}
             </div>
             <div className="form-group">
               <label htmlFor="password">Password: </label>
@@ -185,17 +176,12 @@ function Register() {
                       }}
                     ></div>
                   </div>
-                  <span
-                    className="strength-text"
-                    style={{ color: getStrengthColor() }}
-                  >
+                  <span className="strength-text" style={{ color: getStrengthColor() }}>
                     Password:: {passwordStrength}
                   </span>
                 </div>
               )}
-              {fieldErrors.password && (
-                <span className="field-error">{fieldErrors.password}</span>
-              )}
+              {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
             </div>
 
             <div className="form-group">
@@ -216,9 +202,7 @@ function Register() {
                   type="button"
                   className="toggle-password-btn"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  title={
-                    showConfirmPassword ? "Hide password" : "Show password"
-                  }
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
                   disabled={isLoading}
                 >
                   {showConfirmPassword ? "👁️ Hide" : "👁️ Show"}
@@ -226,9 +210,7 @@ function Register() {
               </div>
 
               {fieldErrors.confirmPassword && (
-                <span className="field-error">
-                  {fieldErrors.confirmPassword}
-                </span>
+                <span className="field-error">{fieldErrors.confirmPassword}</span>
               )}
             </div>
             <button type="submit" className="btn-submit" disabled={isLoading}>
