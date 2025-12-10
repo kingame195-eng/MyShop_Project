@@ -15,7 +15,7 @@ function Account() {
     email: user?.email || "email@example.com",
     phone: user?.phone || "Not provided",
     address: user?.address || "Not provided",
-    avatar: "https://via.placeholder.com/150",
+    avatar: "https://placehold.co/150x150?text=User",
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState(userInfo);
