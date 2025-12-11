@@ -94,7 +94,7 @@ function ForgotPassword() {
 
             <button type="submit" className="btn-submit" disabled={isLoading}>
               {isLoading && <span className="spinner-mini"></span>}
-              {isLoading ? "Đang Gửi..." : "Gửi Email Reset"}
+              {isLoading ? "Sending..." : "Send Reset Email"}
             </button>
           </form>
 
